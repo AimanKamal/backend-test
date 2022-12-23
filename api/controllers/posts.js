@@ -1,8 +1,4 @@
 const axios = require('axios');
-const { response } = require('express');
-const { json } = require('express/lib/response');
-const { filter } = require('jszip');
-const { post } = require('../routes/posts');
 
 exports.get_top_posts_by_comment = async (req, res, next) => {
     let limit = req.query.limit || 10
