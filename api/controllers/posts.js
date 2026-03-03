@@ -22,22 +22,15 @@ exports.get_top_posts_by_comment = async (req, res, next) => {
         post_obj[comment.postId] += 1
     });
 
-    sorted = Object.keys(post_obj).sort((a, b) => { return post_obj[b] - post_obj[a] })
-    top_ten = sorted.slice(0, limit)
-
     let top_ten_posts = []
-    for (let i = 0; i < top_ten.length; i++) {
-        p_id = top_ten[i]
-        let post = await axios.get(`https://jsonplaceholder.typicode.com/posts/${p_id}`)
-            .then(res => {
-                return res.data
-            })
-            .catch(error => {
-                console.log(error)
-                return null
-            })
-        if (post != null) top_ten_posts.push(post)
-    }
+    top_ten_posts = await axios.get(`https://jsonplaceholder.typicode.com/posts`, {headers: { "Accept-Encoding": "gzip,deflate,compress" }})
+        .then(res => {
+            return res.data
+        })
+        .catch(error => {
+            console.log(error)
+            return null
+        })
 
     let response_data = top_ten_posts.map(p => { return {
         post_id: p.id,
@@ -45,7 +38,8 @@ exports.get_top_posts_by_comment = async (req, res, next) => {
         post_body: p.body,
         total_number_of_comments: post_obj[p.id]
     }})
-
+    // sorted = Object.keys(response_data).sort((a, b) => { return response_data[total_number_of_comments] - presponse_dataost_obj[total_number_of_comments] })
+    response_data.sort((a, b) => { return b.total_number_of_comments - a.total_number_of_comments })
     res.status(200).json({data: response_data, length: response_data.length})
 }
 
@@ -62,11 +56,11 @@ exports.filter_comments = async (req, res, next) => {
     params_keys = Object.keys(req.query)
     let filterable_fields = {}
     for (let k = 0; k < params_keys.length; k++) {
-        filterable_fields[params_keys[k]] = req.query[params_keys[k]] || null
+        if (req.query[params_keys[k]] != null) filterable_fields[params_keys[k]] = req.query[params_keys[k]]
     }
-    Object.keys(filterable_fields).forEach(key => {
-        if (filterable_fields[key] === null) delete filterable_fields[key]
-    })
+    // Object.keys(filterable_fields).forEach(key => {
+    //     if (filterable_fields[key] === null) delete filterable_fields[key]
+    // })
     
     // fetch comments
     let comments = null
@@ -91,6 +85,7 @@ exports.filter_comments = async (req, res, next) => {
         if (filters.length > 0) {
             for (let i = 0; i < filters.length; i++) {
                 let key = filters[i]
+                // TODO: catch error if key not in comment
                 check_status.push(comment[key] == filterable_fields[key] ? true : false)
             }
         }
